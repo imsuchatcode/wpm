@@ -51,15 +51,18 @@ bool checkingChar(bool state, string sentence, WINDOW * win){
     return false;
 }
 
-string randomSentence(){
+string randomSentence()
+{
     vector<string> sentences;
     string sentence;
     ifstream textfile("sentence.txt");
     
     srand(time(0));
-    while(textfile >> sentence){
+    while (getline(textfile, sentence)){
         sentences.push_back(sentence);
     }
+    textfile.close();
+
     return sentences[rand() % sentences.size()];
 }
 
