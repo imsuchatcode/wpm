@@ -1,6 +1,8 @@
 #include <iostream>
 #include <bits/stdc++.h>
 #include <curses.h>
+#include <fstream>
+#include <ctime>
 using namespace std;
 
 WINDOW* init(){
@@ -49,6 +51,18 @@ bool checkingChar(bool state, string sentence, WINDOW * win){
     return false;
 }
 
+string randomSentence(){
+    vector<string> sentences;
+    string sentence;
+    ifstream textfile("sentence.txt");
+    
+    srand(time(0));
+    while(textfile >> sentence){
+        sentences.push_back(sentence);
+    }
+    return sentences[rand() % sentences.size()];
+}
+
 int main(int argc, char ** argv){
     WINDOW *curwin =  init();
     bool curstate = true;
@@ -56,7 +70,7 @@ int main(int argc, char ** argv){
     while (curstate)
     {
         // try to create a function thaty take random phraise to from a text file (would be great to learn wtf is api)
-        string sentence = "please try to write like this sentence";
+        string sentence = randomSentence();
         mvwprintw(curwin, 1, 1, sentence.c_str());
 
         // create a funtion that check type per min (haredest)
