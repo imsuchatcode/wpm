@@ -21,16 +21,30 @@ WINDOW* init(){
     return win;
 }
 
-bool checkingChar(bool state, string sentence, WINDOW * win){
+bool shouldContinue(WINDOW * win)
+{
+    int yMax, xMax;
+    getmaxyx(stdscr, yMax, xMax);
+    mvwprintw(win, yMax / 2, (xMax / 2) - 16, "do you wish to continue ?: [Y/N]");
+    wrefresh(win);
+    refresh();
+    int answer = wgetch(win);
+    if ((answer == 'Y') || (answer == 'y'))
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+void checkingChar(string sentence, WINDOW * win){
     int cur_chr = 0;
     int cur_x = 1;
-    while (state)
-    {
-        if (cur_chr >= sentence.size())
-        {
-            state = false;
-        }
 
+    while (cur_chr < sentence.size())
+    {
         int ch = wgetch(win);
         if (ch == sentence[cur_chr])
         {
@@ -48,7 +62,6 @@ bool checkingChar(bool state, string sentence, WINDOW * win){
         cur_chr++;
         cur_x++;
     }
-    return false;
 }
 
 string randomSentence()
@@ -74,13 +87,18 @@ int main(int argc, char ** argv){
     {
         // try to create a function thaty take random phraise to from a text file (would be great to learn wtf is api)
         string sentence = randomSentence();
-        mvwprintw(curwin, 1, 1, sentence.c_str());
-
+        mvwprintw(curwin, 1, 1, "%s", sentence.c_str());
+        wmove(curwin , 2, 1);
         // create a funtion that check type per min (haredest)
 
         // create a funtuntion to wrap this check if correct word
-        curstate = checkingChar(curstate, sentence, curwin);
+        checkingChar(sentence, curwin);
         // create a end loop that tell should player continue or stop
+        curstate = shouldContinue(curwin);
+
+        wclear(curwin);
+        box(curwin, 0 ,0);
+        wrefresh(curwin);
     }
     getch();
     
