@@ -3,7 +3,10 @@
 #include <curses.h>
 #include <fstream>
 #include <ctime>
+#include <chrono>
 using namespace std;
+
+int yMax, xMax;
 
 WINDOW* init(){
     initscr();
@@ -12,7 +15,6 @@ WINDOW* init(){
     init_pair(2, COLOR_RED, COLOR_BLACK);
     init_pair(3, COLOR_WHITE, COLOR_BLACK);
 
-    int yMax, xMax;
     getmaxyx(stdscr, yMax, xMax);
     WINDOW * win = newwin(yMax, xMax, 0, 0);
     box(win, 0 ,0);
@@ -23,9 +25,7 @@ WINDOW* init(){
 
 bool shouldContinue(WINDOW * win)
 {
-    int yMax, xMax;
-    getmaxyx(stdscr, yMax, xMax);
-    mvwprintw(win, yMax / 2, (xMax / 2) - 16, "do you wish to continue ?: [Y/N]");
+    mvwprintw(win, yMax / 2, (xMax / 2) - 14, "do you wish to continue ?: [Y/N]");
     wrefresh(win);
     refresh();
     int answer = wgetch(win);
@@ -43,6 +43,7 @@ void checkingChar(string sentence, WINDOW * win){
     int cur_chr = 0;
     int cur_x = 1;
 
+    wmove(win, 2, 1);
     while (cur_chr < sentence.size())
     {
         int ch = wgetch(win);
@@ -85,20 +86,28 @@ int main(int argc, char ** argv){
 
     while (curstate)
     {
-        // try to create a function thaty take random phraise to from a text file (would be great to learn wtf is api)
+        // try to create a function thaty take random phraise to from a text file 
         string sentence = randomSentence();
+        int numchar = sentence.size();
         mvwprintw(curwin, 1, 1, "%s", sentence.c_str());
-        wmove(curwin , 2, 1);
         // create a funtion that check type per min (haredest)
 
         // create a funtuntion to wrap this check if correct word
+        auto start = chrono::high_resolution_clock::now();
         checkingChar(sentence, curwin);
+        auto end = chrono::high_resolution_clock::now();
+
+        // careful about double (if want double  must divide by a double or it will round up)
+        double duration = (chrono::duration_cast<chrono::seconds>(end - start).count()) / 60.0;
+
         // create a end loop that tell should player continue or stop
+        int wpm = round(numchar / duration);
+        string result = "your word per min is : " + to_string(wpm);
+        mvwprintw(curwin, (yMax / 2) + 3, (xMax / 2) - 11, "%s" , result.c_str()); 
         curstate = shouldContinue(curwin);
 
         wclear(curwin);
         box(curwin, 0 ,0);
-        wrefresh(curwin);
     }
     getch();
     
