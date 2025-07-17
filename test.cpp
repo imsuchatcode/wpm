@@ -17,7 +17,10 @@ WINDOW* init(){
 
     getmaxyx(stdscr, yMax, xMax);
     WINDOW * win = newwin(yMax, xMax, 0, 0);
-    box(win, 0 ,0);
+    mvwprintw(win, (yMax) / 2 , ((xMax) / 2) - 29, "%s", "this is a word per minite test press any where to continue");
+    wgetch(win);
+    wclear(win);
+    box(win, 0, 0);
     refresh();
     wrefresh(win);
     return win;
@@ -80,15 +83,26 @@ string randomSentence()
     return sentences[rand() % sentences.size()];
 }
 
+int charCount(string sentence){
+    int charcount = 0;
+    for (int i = 0 ; i < sentence.size(); i++){
+        if (sentence[i] == ' '){
+            continue;
+        }
+        charcount++;
+    }
+    cout << charcount << endl;
+    return charcount;
+}
+
 int main(int argc, char ** argv){
     WINDOW *curwin =  init();
     bool curstate = true;
-
     while (curstate)
     {
         // try to create a function thaty take random phraise to from a text file 
         string sentence = randomSentence();
-        int numchar = sentence.size();
+        int numchar = charCount(sentence);
         mvwprintw(curwin, 1, 1, "%s", sentence.c_str());
         // create a funtion that check type per min (haredest)
 
