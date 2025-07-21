@@ -11,6 +11,7 @@ int yMax, xMax;
 WINDOW* init(){
     initscr();
     start_color();
+    noecho();
     init_pair(1, COLOR_GREEN, COLOR_BLACK);
     init_pair(2, COLOR_RED, COLOR_BLACK);
     init_pair(3, COLOR_WHITE, COLOR_BLACK);
@@ -26,8 +27,20 @@ WINDOW* init(){
     return win;
 }
 
+int charCount(string sentence){
+    int charcount = 0;
+    for (int i = 0 ; i < sentence.size(); i++){
+        if (sentence[i] == ' '){
+            continue;
+        }
+        charcount++;
+    }
+    return charcount;
+}
+
 bool shouldContinue(WINDOW * win)
 {
+    nodelay(win, false);
     mvwprintw(win, yMax / 2, (xMax / 2) - 14, "do you wish to continue ?: [Y/N]");
     wrefresh(win);
     refresh();
@@ -42,30 +55,77 @@ bool shouldContinue(WINDOW * win)
     }
 }
 
+void updateWin(WINDOW * win, int numchar , int correct_char, chrono::high_resolution_clock::time_point start_time){
+    auto now = chrono::high_resolution_clock::now();
+    double duration = chrono::duration_cast<chrono::milliseconds>(now - start_time).count() / 1000.0;
+
+    if (duration > 0){
+        int wpm = round((correct_char / 5) / (duration / 60));
+
+        double accuracy = numchar > 0 ? ((double)correct_char / numchar) * 100 : 0.0;
+
+        char buf[120];
+        snprintf(buf, sizeof(buf), "WPM : %d | accuracy : %.1f%% | duration : %.1fs", wpm, accuracy, duration);
+
+        wmove(win, 3, 1);
+        wclrtoeol(win);
+        mvwprintw(win, 3, 1, "%s", buf); 
+        wrefresh(win);
+    }
+}
+
 void checkingChar(string sentence, WINDOW * win){
     int cur_chr = 0;
     int cur_x = 1;
+    int numchar = charCount(sentence);
+    int corrchar = 0;
+    int total_attemp = 0;    
 
+    auto start = chrono::high_resolution_clock::now();
+    auto last_update = start;  
     wmove(win, 2, 1);
+
+    nodelay(win, false);
     while (cur_chr < sentence.size())
     {
         int ch = wgetch(win);
-        if (ch == sentence[cur_chr])
+
+        auto now = chrono::high_resolution_clock::now();
+        if (chrono::duration_cast<chrono::milliseconds>(now - last_update).count() >= 100){
+            updateWin(win, total_attemp, corrchar, start);
+            last_update = now;
+        }
+
+        if (ch == ERR){
+            napms(10);
+            continue;
+        }
+
+        if ((sentence[cur_chr] == ' ') && (ch != ' ')){
+            mvwprintw(win, 2, cur_x, "%c" ,' ');
+            continue;
+        }
+        else if (ch == sentence[cur_chr])
         {
             wattron(win, COLOR_PAIR(1));
             mvwprintw(win, 2, cur_x, "%c", sentence[cur_chr]);
             wattroff(win, COLOR_PAIR(1));
+            corrchar++;
+            total_attemp++;    
         }
         else
         {
             wattron(win, COLOR_PAIR(2));
             mvwprintw(win, 2, cur_x, "%c", sentence[cur_chr]);
             wattroff(win, COLOR_PAIR(2));
+            total_attemp++;
         }
-        wrefresh(win);
         cur_chr++;
         cur_x++;
+        wrefresh(win);
+        wmove(win, 2, cur_x);
     }
+    nodelay(win, true);
 }
 
 string randomSentence()
@@ -83,18 +143,6 @@ string randomSentence()
     return sentences[rand() % sentences.size()];
 }
 
-int charCount(string sentence){
-    int charcount = 0;
-    for (int i = 0 ; i < sentence.size(); i++){
-        if (sentence[i] == ' '){
-            continue;
-        }
-        charcount++;
-    }
-    cout << charcount << endl;
-    return charcount;
-}
-
 int main(int argc, char ** argv){
     WINDOW *curwin =  init();
     bool curstate = true;
@@ -102,22 +150,15 @@ int main(int argc, char ** argv){
     {
         // try to create a function thaty take random phraise to from a text file 
         string sentence = randomSentence();
-        int numchar = charCount(sentence);
         mvwprintw(curwin, 1, 1, "%s", sentence.c_str());
+
         // create a funtion that check type per min (haredest)
+        // done inside checkingChar function
 
         // create a funtuntion to wrap this check if correct word
-        auto start = chrono::high_resolution_clock::now();
         checkingChar(sentence, curwin);
-        auto end = chrono::high_resolution_clock::now();
-
-        // careful about double (if want double  must divide by a double or it will round up)
-        double duration = (chrono::duration_cast<chrono::seconds>(end - start).count()) / 60.0;
 
         // create a end loop that tell should player continue or stop
-        int wpm = round(numchar / duration);
-        string result = "your word per min is : " + to_string(wpm);
-        mvwprintw(curwin, (yMax / 2) + 3, (xMax / 2) - 11, "%s" , result.c_str()); 
         curstate = shouldContinue(curwin);
 
         wclear(curwin);
