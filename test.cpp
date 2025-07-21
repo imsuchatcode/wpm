@@ -1,10 +1,15 @@
 #include <iostream>
-#include <bits/stdc++.h>
+#include <string>
+#include <ctime>
+#include <vector>
+#include <cmath>
 #include <curses.h>
 #include <fstream>
 #include <ctime>
 #include <chrono>
+
 using namespace std;
+using namespace chrono;
 
 int yMax, xMax;
 
@@ -45,43 +50,36 @@ bool shouldContinue(WINDOW * win)
     wrefresh(win);
     refresh();
     int answer = wgetch(win);
-    if ((answer == 'Y') || (answer == 'y'))
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
+    return ((answer == 'Y') || (answer == 'y'));
 }
 
-void updateWin(WINDOW * win, int numchar , int correct_char, chrono::high_resolution_clock::time_point start_time){
-    auto now = chrono::high_resolution_clock::now();
-    double duration = chrono::duration_cast<chrono::milliseconds>(now - start_time).count() / 1000.0;
+void updateWin(WINDOW * win, int total , int correct_char, high_resolution_clock::time_point start_time){
+    auto now = high_resolution_clock::now();
+    double duration = duration_cast<milliseconds>(now - start_time).count() / 1000.0;
 
-    if (duration > 0){
-        int wpm = round((correct_char / 5) / (duration / 60));
+    if (duration <= 0) return;
+    int wpm = round((correct_char / 5) / (duration / 60));
 
-        double accuracy = numchar > 0 ? ((double)correct_char / numchar) * 100 : 0.0;
+    double accuracy = total > 0 ? ((double)correct_char / total) * 100 : 0.0;
 
-        char buf[120];
-        snprintf(buf, sizeof(buf), "WPM : %d | accuracy : %.1f%% | duration : %.1fs", wpm, accuracy, duration);
+    char buf[120];
+    snprintf(buf, sizeof(buf), "WPM : %d | accuracy : %.1f%% | duration : %.1fs", wpm, accuracy, duration);
 
-        wmove(win, 3, 1);
-        wclrtoeol(win);
-        mvwprintw(win, 3, 1, "%s", buf); 
-        wrefresh(win);
-    }
+    wmove(win, 3, 1);
+    wclrtoeol(win);
+    mvwprintw(win, 3, 1, "%s", buf);
+    wrefresh(win);
 }
 
-void checkingChar(string sentence, WINDOW * win){
+void checkingChar(string sentence, WINDOW *win)
+{
     int cur_chr = 0;
     int cur_x = 1;
     int numchar = charCount(sentence);
     int corrchar = 0;
     int total_attemp = 0;    
 
-    auto start = chrono::high_resolution_clock::now();
+    auto start = high_resolution_clock::now();
     auto last_update = start;  
     wmove(win, 2, 1);
 
@@ -90,8 +88,8 @@ void checkingChar(string sentence, WINDOW * win){
     {
         int ch = wgetch(win);
 
-        auto now = chrono::high_resolution_clock::now();
-        if (chrono::duration_cast<chrono::milliseconds>(now - last_update).count() >= 100){
+        auto now = high_resolution_clock::now();
+        if (duration_cast<milliseconds>(now - last_update).count() >= 100){
             updateWin(win, total_attemp, corrchar, start);
             last_update = now;
         }
@@ -143,7 +141,7 @@ string randomSentence()
     return sentences[rand() % sentences.size()];
 }
 
-int main(int argc, char ** argv){
+int main(){
     WINDOW *curwin =  init();
     bool curstate = true;
     while (curstate)
